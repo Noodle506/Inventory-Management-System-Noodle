@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Orders - Inventory Management System{% endblock %}
+
+{% block content %}
+<div class="orders-container">
+    <h2>Orders</h2>
+    
+    <button class="btn btn-primary" onclick="openAddOrderModal()">Create New Order</button>
+    
+    <table class="orders-table">
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Order Date</th>
+                <th>Total Amount</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- TODO: Add order rows -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Add/Edit Order Modal -->
+<div id="orderModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeOrderModal()">&times;</span>
+        <h3>Order Details</h3>
+        <form id="orderForm">
+            <!-- TODO: Add form fields -->
+        </form>
+    </div>
+</div>
+{% endblock %}

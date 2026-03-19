@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Products - Inventory Management System{% endblock %}
+
+{% block content %}
+<div class="products-container">
+    <h2>Products</h2>
+    
+    <button class="btn btn-primary" onclick="openAddProductModal()">Add New Product</button>
+    
+    <table class="products-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>SKU</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- TODO: Add product rows -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Add/Edit Product Modal -->
+<div id="productModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeProductModal()">&times;</span>
+        <h3>Product Details</h3>
+        <form id="productForm">
+            <!-- TODO: Add form fields -->
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Customers - Inventory Management System{% endblock %}
+
+{% block content %}
+<div class="customers-container">
+    <h2>Customers</h2>
+    
+    <button class="btn btn-primary" onclick="openAddCustomerModal()">Add New Customer</button>
+    
+    <table class="customers-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>City</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- TODO: Add customer rows -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Add/Edit Customer Modal -->
+<div id="customerModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeCustomerModal()">&times;</span>
+        <h3>Customer Details</h3>
+        <form id="customerForm">
+            <!-- TODO: Add form fields -->
+        </form>
+    </div>
+</div>
+{% endblock %}
