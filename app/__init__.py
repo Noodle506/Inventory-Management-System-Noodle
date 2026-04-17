@@ -1,27 +1,33 @@
-from flask import Flask
+from flask import Flask, redirect, url_for  # Added redirect/url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from flask_migrate import Migrate
 
-# Initialize extensions outside the factory to avoid circular imports
+# 1. Initialize extensions globally
 db = SQLAlchemy()
 jwt = JWTManager()
 migrate = Migrate()
 
 def create_app(config_class='app.config.Config'):
     app = Flask(__name__)
-    
-    # Load configuration
+
+    # Make session['username'] available in all templates
+    @app.context_processor
+    def inject_user():
+        from flask import session
+        return dict(session=session)
+
+    # 2. Load configuration
     app.config.from_object(config_class)
 
-    # Initialize extensions with the app instance
+    # 3. Initialize extensions
     db.init_app(app)
     jwt.init_app(app)
     migrate.init_app(app, db)
-    CORS(app)  # Enable CORS for API access
+    CORS(app)
 
-    # Import blueprints inside the function to prevent circular imports
+    # 4. Import and Register Blueprints
     from app.routes import (
         auth_routes, 
         product_routes, 
@@ -30,15 +36,30 @@ def create_app(config_class='app.config.Config'):
         report_routes
     )
 
-    # Register blueprints with proper URL prefixes for Milestone 1 / T4
-    # This maps the routes so the test client can find them
-    app.register_blueprint(auth_routes.bp, url_prefix='/auth')
-    app.register_blueprint(product_routes.bp, url_prefix='/products')
-    app.register_blueprint(customer_routes.bp, url_prefix='/customers')
-    app.register_blueprint(order_routes.bp, url_prefix='/orders')
-    app.register_blueprint(report_routes.bp, url_prefix='/reports')
+    app.register_blueprint(auth_routes.bp, url_prefix='/api/auth')
+    app.register_blueprint(product_routes.bp, url_prefix='/api/products')
+    app.register_blueprint(customer_routes.bp, url_prefix='/api/customers')
+    app.register_blueprint(order_routes.bp, url_prefix='/api/orders')
+    app.register_blueprint(report_routes.bp, url_prefix='/api/reports')
 
-    # Create database tables (T2: PostgreSQL Schema)
+    # --- HOME ROUTE: Render index.html as the home page ---
+    from flask import render_template
+    from app.utils import login_required
+    @app.route('/')
+    @login_required
+    def home():
+        from app.models import Product, Customer, Order
+        products_count = Product.query.count()
+        customers_count = Customer.query.count()
+        orders_count = Order.query.count()
+        return render_template(
+            'index.html',
+            products_count=products_count,
+            customers_count=customers_count,
+            orders_count=orders_count
+        )
+
+    # 5. Create Database Tables
     with app.app_context():
         db.create_all()
 

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Register - IMS Dashboard{% endblock %}
+{% block content %}
+<div style="max-width: 400px; margin: 60px auto; background: #fff; padding: 32px 28px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
+    <h2 style="text-align:center; margin-bottom: 24px;">Register</h2>
+    <form id="registerForm">
+        <div style="margin-bottom: 18px;">
+            <label>Username</label><br>
+            <input type="text" id="username" name="username" style="width:100%; padding:10px;" required>
+        </div>
+        <div style="margin-bottom: 18px;">
+            <label>Email</label><br>
+            <input type="email" id="email" name="email" style="width:100%; padding:10px;" required>
+        </div>
+        <div style="margin-bottom: 18px;">
+            <label>Password</label><br>
+            <input type="password" id="password" name="password" style="width:100%; padding:10px;" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%; padding:12px;">Register</button>
+    </form>
+    <div id="registerError" style="color:red; margin-top:16px; display:none;"></div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.getElementById("registerForm").onsubmit = async (e) => {
+    e.preventDefault();
+    const username = document.getElementById("username").value;
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, password })
+    });
+    if (response.ok) {
+        window.location.href = "/api/auth/login";
+    } else {
+        const err = await response.json();
+        document.getElementById("registerError").innerText = err.error || "Registration failed";
+        document.getElementById("registerError").style.display = "block";
+    }
+};
+</script>
+{% endblock %}

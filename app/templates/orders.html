@@ -1,38 +1,236 @@
 {% extends "base.html" %}
-
-{% block title %}Orders - Inventory Management System{% endblock %}
+{% block title %}Orders - IMS Dashboard{% endblock %}
 
 {% block content %}
-<div class="orders-container">
-    <h2>Orders</h2>
-    
-    <button class="btn btn-primary" onclick="openAddOrderModal()">Create New Order</button>
-    
-    <table class="orders-table">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2>Order Management</h2>
+    <button class="btn btn-primary" onclick="openAddOrderModal()">+ Add Order</button>
+</div>
+<div style="overflow-x:auto;">
+    <table style="width:100%; border-collapse:collapse; background:#fff; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
         <thead>
-            <tr>
-                <th>Order ID</th>
-                <th>Customer</th>
-                <th>Order Date</th>
-                <th>Total Amount</th>
-                <th>Status</th>
-                <th>Actions</th>
+            <tr style="background:#f8f9fa; border-bottom:2px solid #dee2e6; text-align:left;">
+                <th style="padding:12px;">Order ID</th>
+                <th style="padding:12px;">Customer</th>
+                <th style="padding:12px;">Date</th>
+                <th style="padding:12px;">Total</th>
+                <th style="padding:12px;">Status</th>
+                <th style="padding:12px;">Actions</th>
             </tr>
         </thead>
         <tbody>
-            <!-- TODO: Add order rows -->
+            {% for order in orders %}
+            <tr style="border-bottom:1px solid #eee;">
+                <td style="padding:12px;">#{{ order.id }}</td>
+                <td style="padding:12px;"><strong>{{ order.customer.name }}</strong></td>
+                <td style="padding:12px;">{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else 'N/A' }}</td>
+                <td style="padding:12px;">${{ "%.2f"|format(order.total_amount) }}</td>
+                <td style="padding:12px;"><span style="background:#e1f5fe; color:#01579b; padding:4px 8px; border-radius:4px; font-size:0.85em;">{{ order.status|upper }}</span></td>
+                <td style="padding:12px;">
+                    <button class="btn btn-primary" onclick="openEditOrderModal({{ order.id }})">Edit</button>
+                    <button class="btn btn-success" onclick="deleteOrder({{ order.id }})" style="margin-left:10px;">Delete</button>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" style="text-align:center; padding:30px;">No orders found.</td></tr>
+            {% endfor %}
         </tbody>
     </table>
 </div>
 
-<!-- Add/Edit Order Modal -->
-<div id="orderModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeOrderModal()">&times;</span>
-        <h3>Order Details</h3>
+<!-- Add Order Modal -->
+<div id="orderModal" class="modal" style="display:none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+    <!-- Edit Order Modal (reuse orderModal for edit, but set mode) -->
+    <div id="editOrderModal" class="modal" style="display:none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+        <div style="background-color: white; margin: 5% auto; padding: 30px; border-radius: 8px; width: 500px; max-height: 80vh; overflow-y: auto;">
+            <span onclick="closeEditOrderModal()" style="float: right; cursor: pointer; font-size: 24px;">&times;</span>
+            <h3>Edit Order</h3>
+            <hr>
+            <form id="editOrderForm">
+                <div style="margin-bottom: 15px;">
+                    <label>Customer *</label><br>
+                    <select id="edit_customer_id" style="width: 100%; padding: 10px; margin-top: 5px;" required>
+                        <option value="">-- Select Customer --</option>
+                        {% for c in customers %}
+                        <option value="{{ c.id }}">{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div id="edit_itemsList">
+                    <label>Products *</label>
+                    <!-- Will be filled by JS -->
+                </div>
+                <button type="button" onclick="addEditProductRow()" style="margin-bottom: 20px; background: none; border: 1px dashed #007bff; color: #007bff; padding: 8px; width: 100%; cursor: pointer; border-radius: 4px;">+ Add Another Product</button>
+                <button type="submit" style="width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Save Changes</button>
+            </form>
+        </div>
+    </div>
+    <div style="background-color: white; margin: 5% auto; padding: 30px; border-radius: 8px; width: 500px; max-height: 80vh; overflow-y: auto;">
+        <span onclick="closeOrderModal()" style="float: right; cursor: pointer; font-size: 24px;">&times;</span>
+        <h3>Create New Order</h3>
+        <hr>
         <form id="orderForm">
-            <!-- TODO: Add form fields -->
+            <div style="margin-bottom: 15px;">
+                <label>Customer *</label><br>
+                <select id="customer_id" style="width: 100%; padding: 10px; margin-top: 5px;" required>
+                    <option value="">-- Select Customer --</option>
+                    {% for c in customers %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div id="itemsList">
+                <label>Products *</label>
+                <div class="item-row" style="display: flex; gap: 10px; margin-top: 5px; margin-bottom: 10px;">
+                    <select class="product-select" style="flex: 2; padding: 10px;" required>
+                        <option value="">-- Select Product --</option>
+                        {% for p in products %}
+                        <option value="{{ p.id }}">{{ p.name }} (${{ "%.2f"|format(p.price) }})</option>
+                        {% endfor %}
+                    </select>
+                    <input type="number" class="qty-input" placeholder="Qty" style="flex: 1; padding: 10px;" min="1" required>
+                </div>
+            </div>
+            <button type="button" onclick="addProductRow()" style="margin-bottom: 20px; background: none; border: 1px dashed #007bff; color: #007bff; padding: 8px; width: 100%; cursor: pointer; border-radius: 4px;">+ Add Another Product</button>
+            <button type="submit" style="width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Submit Order</button>
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const modal = document.getElementById("orderModal");
+const editModal = document.getElementById("editOrderModal");
+function openAddOrderModal() {
+    document.getElementById("orderForm").reset();
+    const itemsList = document.getElementById("itemsList");
+    while (itemsList.children.length > 2) {
+        itemsList.removeChild(itemsList.lastChild);
+    }
+    modal.style.display = "block";
+}
+function closeOrderModal() { modal.style.display = "none"; }
+function addProductRow() {
+    const itemsList = document.getElementById("itemsList");
+    const firstRow = document.querySelector(".item-row");
+    const newRow = firstRow.cloneNode(true);
+    newRow.querySelector(".qty-input").value = "";
+    newRow.querySelector(".product-select").selectedIndex = 0;
+    itemsList.appendChild(newRow);
+}
+document.getElementById("orderForm").onsubmit = async (e) => {
+    e.preventDefault();
+    const items = [];
+    document.querySelectorAll(".item-row").forEach(row => {
+        const p_id = row.querySelector(".product-select").value;
+        const qty = row.querySelector(".qty-input").value;
+        if (p_id && qty) {
+            items.push({ product_id: parseInt(p_id), quantity: parseInt(qty) });
+        }
+    });
+    const payload = {
+        customer_id: parseInt(document.getElementById("customer_id").value),
+        items: items
+    };
+    const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    if (response.ok) {
+        closeOrderModal();
+        location.reload();
+    } else {
+        const err = await response.json();
+        alert("Error: " + (err.error || "Order creation failed"));
+    }
+};
+
+// --- Edit Order Modal Logic ---
+function openEditOrderModal(orderId) {
+    // Fetch order details from backend (or pass via JS if available)
+    fetch(`/api/orders/${orderId}`)
+        .then(res => res.json())
+        .then(order => {
+            document.getElementById("edit_customer_id").value = order.customer_id;
+            const editItemsList = document.getElementById("edit_itemsList");
+            editItemsList.innerHTML = '';
+            order.items.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'item-row';
+                row.style = 'display: flex; gap: 10px; margin-top: 5px; margin-bottom: 10px;';
+                let productOptions = `<option value="">-- Select Product --</option>`;
+                {% for p in products %}
+                productOptions += `<option value="{{ p.id }}" ${item.product_id == {{ p.id }} ? 'selected' : ''}>{{ p.name }} (${{ "%.2f"|format(p.price) }})</option>`;
+                {% endfor %}
+                row.innerHTML = `
+                    <select class="product-select" style="flex: 2; padding: 10px;" required>${productOptions}</select>
+                    <input type="number" class="qty-input" placeholder="Qty" style="flex: 1; padding: 10px;" min="1" required value="${item.quantity}">
+                    <button type="button" onclick="this.parentNode.remove()" style="color:red; background:none; border:none; font-size:18px;">&times;</button>
+                `;
+                editItemsList.appendChild(row);
+            });
+        });
+    editModal.style.display = "block";
+    editModal.setAttribute('data-order-id', orderId);
+}
+function closeEditOrderModal() { editModal.style.display = "none"; }
+function addEditProductRow() {
+    const editItemsList = document.getElementById("edit_itemsList");
+    let productOptions = `<option value="">-- Select Product --</option>`;
+    {% for p in products %}
+    productOptions += `<option value="{{ p.id }}">{{ p.name }} (${{ "%.2f"|format(p.price) }})</option>`;
+    {% endfor %}
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.style = 'display: flex; gap: 10px; margin-top: 5px; margin-bottom: 10px;';
+    row.innerHTML = `
+        <select class="product-select" style="flex: 2; padding: 10px;" required>${productOptions}</select>
+        <input type="number" class="qty-input" placeholder="Qty" style="flex: 1; padding: 10px;" min="1" required>
+        <button type="button" onclick="this.parentNode.remove()" style="color:red; background:none; border:none; font-size:18px;">&times;</button>
+    `;
+    editItemsList.appendChild(row);
+}
+document.getElementById("editOrderForm").onsubmit = async (e) => {
+    e.preventDefault();
+    const orderId = editModal.getAttribute('data-order-id');
+    const items = [];
+    document.querySelectorAll("#edit_itemsList .item-row").forEach(row => {
+        const p_id = row.querySelector(".product-select").value;
+        const qty = row.querySelector(".qty-input").value;
+        if (p_id && qty) {
+            items.push({ product_id: parseInt(p_id), quantity: parseInt(qty) });
+        }
+    });
+    const payload = {
+        customer_id: parseInt(document.getElementById("edit_customer_id").value),
+        items: items
+    };
+    const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    if (response.ok) {
+        closeEditOrderModal();
+        location.reload();
+    } else {
+        const err = await response.json();
+        alert("Error: " + (err.error || "Order update failed"));
+    }
+};
+
+// --- Delete Order ---
+async function deleteOrder(id) {
+    if (confirm("Permanently remove this order?")) {
+        const response = await fetch(`/api/orders/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+            location.reload();
+        } else {
+            alert("Cannot delete order.");
+        }
+    }
+}
+</script>
 {% endblock %}

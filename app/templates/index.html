@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Home - IMS Dashboard{% endblock %}
+
+{% block content %}
+<div style="text-align:center; margin-bottom: 30px;">
+    <h2>Welcome to your Store Command Center</h2>
+    <p>Monitor your inventory, manage customers, and track orders in one place.</p>
+</div>
+<div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap;">
+    <div style="flex:1; min-width:220px; max-width:300px; background:#fff; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:24px; text-align:center;">
+        <h3 style="color:#777;">Total Products</h3>
+        <p style="font-size:2.2rem; font-weight:bold; color:#333;">{{ products_count|default('0') }}</p>
+        <a href="/api/products/view" class="btn btn-primary" style="margin-top:10px;">Manage Stock</a>
+    </div>
+    <div style="flex:1; min-width:220px; max-width:300px; background:#fff; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:24px; text-align:center;">
+        <h3 style="color:#777;">Active Customers</h3>
+        <p style="font-size:2.2rem; font-weight:bold; color:#333;">{{ customers_count|default('0') }}</p>
+        <a href="/api/customers/view" class="btn btn-primary" style="margin-top:10px;">View List</a>
+    </div>
+    <div style="flex:1; min-width:220px; max-width:300px; background:#fff; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.04); padding:24px; text-align:center;">
+        <h3 style="color:#777;">Pending Orders</h3>
+        <p style="font-size:2.2rem; font-weight:bold; color:#333;">{{ orders_count|default('0') }}</p>
+        <a href="/api/orders/view" class="btn btn-success" style="margin-top:10px;">View Orders</a>
+    </div>
+</div>
+{% endblock %}

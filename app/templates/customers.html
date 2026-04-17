@@ -1,38 +1,121 @@
 {% extends "base.html" %}
 
-{% block title %}Customers - Inventory Management System{% endblock %}
+{% block title %}Customers - IMS Dashboard{% endblock %}
 
 {% block content %}
-<div class="customers-container">
-    <h2>Customers</h2>
-    
-    <button class="btn btn-primary" onclick="openAddCustomerModal()">Add New Customer</button>
-    
-    <table class="customers-table">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2>Customer Directory</h2>
+    <button class="btn btn-primary" onclick="openAddModal()">+ Add New Customer</button>
+</div>
+<div style="overflow-x:auto;">
+    <table style="width:100%; border-collapse:collapse; background:#fff; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
         <thead>
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>City</th>
-                <th>Actions</th>
+            <tr style="background:#f8f9fa; border-bottom:2px solid #dee2e6; text-align:left;">
+                <th style="padding:15px;">ID</th>
+                <th style="padding:15px;">Name</th>
+                <th style="padding:15px;">Email</th>
+                <th style="padding:15px;">Phone</th>
+                <th style="padding:15px;">City</th>
+                <th style="padding:15px;">Actions</th>
             </tr>
         </thead>
         <tbody>
-            <!-- TODO: Add customer rows -->
+            {% for customer in customers %}
+            <tr style="border-bottom:1px solid #eee;">
+                <td style="padding:15px;">{{ customer.id }}</td>
+                <td style="padding:15px;"><strong>{{ customer.name }}</strong></td>
+                <td style="padding:15px;">{{ customer.email or 'N/A' }}</td>
+                <td style="padding:15px;">{{ customer.phone or 'N/A' }}</td>
+                <td style="padding:15px;">{{ customer.city or 'N/A' }}</td>
+                <td style="padding:15px;">
+                    <button class="btn btn-primary" onclick="openEditModal('{{ customer.id }}', '{{ customer.name }}', '{{ customer.email }}', '{{ customer.phone }}', '{{ customer.city }}')">Edit</button>
+                    <button class="btn btn-success" onclick="deleteCustomer('{{ customer.id }}')" style="margin-left:10px;">Delete</button>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" style="text-align:center; padding:30px;">No customers found.</td></tr>
+            {% endfor %}
         </tbody>
     </table>
 </div>
-
-<!-- Add/Edit Customer Modal -->
-<div id="customerModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeCustomerModal()">&times;</span>
-        <h3>Customer Details</h3>
+<!-- Modal code remains unchanged -->
+<div id="customerModal" class="modal" style="display:none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+    <div style="background-color: white; margin: 10% auto; padding: 30px; border-radius: 8px; width: 400px;">
+        <h3 id="modalTitle">Customer Details</h3>
         <form id="customerForm">
-            <!-- TODO: Add form fields -->
+            <input type="hidden" id="customerId">
+            <div style="margin-bottom: 10px;">
+                <label>Name *</label><br>
+                <input type="text" id="name" style="width: 100%; padding: 8px;" required>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <label>Email</label><br>
+                <input type="email" id="email" style="width: 100%; padding: 8px;">
+            </div>
+            <div style="margin-bottom: 10px;">
+                <label>Phone</label><br>
+                <input type="text" id="phone" style="width: 100%; padding: 8px;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label>City</label><br>
+                <input type="text" id="city" style="width: 100%; padding: 8px;">
+            </div>
+            <button type="submit" class="btn btn-success" style="width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px;">Save Customer</button>
+            <button type="button" onclick="closeModal()" style="width: 100%; margin-top: 10px; background: #6c757d; color: white; border: none; padding: 10px; border-radius: 4px;">Cancel</button>
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const modal = document.getElementById("customerModal");
+function openAddModal() {
+    document.getElementById("customerForm").reset();
+    document.getElementById("customerId").value = "";
+    document.getElementById("modalTitle").innerText = "Add New Customer";
+    modal.style.display = "block";
+}
+function openEditModal(id, name, email, phone, city) {
+    document.getElementById("customerId").value = id;
+    document.getElementById("name").value = name;
+    document.getElementById("email").value = (email === 'None' || email === '') ? '' : email;
+    document.getElementById("phone").value = (phone === 'None') ? '' : phone;
+    document.getElementById("city").value = (city === 'None') ? '' : city;
+    document.getElementById("modalTitle").innerText = "Edit Customer";
+    modal.style.display = "block";
+}
+function closeModal() { modal.style.display = "none"; }
+document.getElementById("customerForm").onsubmit = async (e) => {
+    e.preventDefault();
+    const id = document.getElementById("customerId").value;
+    const data = {
+        name: document.getElementById("name").value,
+        email: document.getElementById("email").value,
+        phone: document.getElementById("phone").value,
+        city: document.getElementById("city").value
+    };
+
+    const url = id ? `/api/customers/${id}` : '/api/customers';
+    const method = id ? 'PUT' : 'POST';
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (response.ok) location.reload();
+        else alert("Failed to save customer.");
+    } catch (err) { alert("Server error."); }
+};
+
+async function deleteCustomer(id) {
+    if (confirm("Delete this customer?")) {
+        const res = await fetch(`/api/customers/${id}`, { method: 'DELETE' });
+        if (res.ok) location.reload();
+        else alert("Cannot delete customer with history.");
+    }
+}
+</script>
 {% endblock %}

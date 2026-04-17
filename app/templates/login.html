@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Login - IMS Dashboard{% endblock %}
+{% block content %}
+<div style="max-width: 400px; margin: 60px auto; background: #fff; padding: 32px 28px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.08);">
+    <h2 style="text-align:center; margin-bottom: 24px;">Sign In</h2>
+    <form id="loginForm">
+        <div style="margin-bottom: 18px;">
+            <label>Username or Email</label><br>
+            <input type="text" id="username" name="username" style="width:100%; padding:10px;" required>
+        </div>
+        <div style="margin-bottom: 18px;">
+            <label>Password</label><br>
+            <input type="password" id="password" name="password" style="width:100%; padding:10px;" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%; padding:12px;">Login</button>
+    </form>
+    <div id="loginError" style="color:red; margin-top:16px; display:none;"></div>
+    <div style="margin-top:20px; text-align:center;">
+        <span>Don't have an account? <a href="/api/auth/register">Register</a></span>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.getElementById("loginForm").onsubmit = async (e) => {
+    e.preventDefault();
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+    const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+    });
+    if (response.ok) {
+        window.location.href = "/";
+    } else {
+        const err = await response.json();
+        document.getElementById("loginError").innerText = err.error || "Login failed";
+        document.getElementById("loginError").style.display = "block";
+    }
+};
+</script>
+{% endblock %}
