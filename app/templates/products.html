@@ -8,9 +8,16 @@
     <button class="btn btn-primary" onclick="openAddProductModal()">+ Add New Product</button>
 </div>
 <div style="overflow-x:auto;">
-    <table style="width:100%; border-collapse:collapse; background:#fff; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+    <table style="width:100%; border-collapse:separate; border-spacing:0; background:#fff; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.05); table-layout: fixed;">
+        <colgroup>
+            <col style="width:10%">
+            <col style="width:30%">
+            <col style="width:20%">
+            <col style="width:20%">
+            <col style="width:20%">
+        </colgroup>
         <thead>
-            <tr style="background:#f8f9fa; border-bottom:2px solid #dee2e6;">
+            <tr style="background:#f8f9fa; border-bottom:2px solid #dee2e6; text-align:center;">
                 <th style="padding:12px;">ID</th>
                 <th style="padding:12px;">Name</th>
                 <th style="padding:12px;">Price</th>
@@ -20,18 +27,18 @@
         </thead>
         <tbody>
             {% for product in products %}
-            <tr style="border-bottom:1px solid #eee;">
-                <td style="padding:12px;">{{ product.id }}</td>
-                <td style="padding:12px;"><strong>{{ product.name }}</strong></td>
-                <td style="padding:12px;">${{ "%.2f"|format(product.price) }}</td>
-                <td style="padding:12px;">
+            <tr style="border-bottom:1px solid #eee; text-align:center;">
+                <td style="padding:12px; word-break:break-word;">{{ product.id }}</td>
+                <td style="padding:12px; word-break:break-word;"><strong>{{ product.name }}</strong></td>
+                <td style="padding:12px; word-break:break-word;">${{ "%.2f"|format(product.price) }}</td>
+                <td style="padding:12px; word-break:break-word;">
                     {% if product.quantity < 5 %}
                         <span style="color:red; font-weight:bold;">{{ product.quantity }} (Low)</span>
                     {% else %}
                         <span>{{ product.quantity }}</span>
                     {% endif %}
                 </td>
-                <td style="padding:12px;">
+                <td style="padding:12px; word-break:break-word;">
                     <button class="btn btn-primary" onclick="openEditProductModal('{{ product.id }}', '{{ product.name }}', '{{ product.price }}', '{{ product.quantity }}')">Edit</button>
                     <button class="btn btn-success" onclick="deleteProduct('{{ product.id }}')" style="margin-left:10px;">Delete</button>
                 </td>
