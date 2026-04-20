@@ -25,7 +25,7 @@ class OrderService:
             return {'error': 'Please select a customer and at least one product'}, 400
         try:
             # Restore product quantities for old items
-            for item in order.items:
+            for item in order.order_items:
                 product = Product.query.get(item.product_id)
                 if product:
                     product.quantity += item.quantity

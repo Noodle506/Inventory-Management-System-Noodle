@@ -3,36 +3,7 @@ from app.utils import login_required
 from app import db
 from app.models import Order, OrderItem, Product, Customer
 from app.services.inventory_service import InventoryService
-import traceback 
-
-bp = Blueprint('orders', __name__)
-
-@bp.route('/<int:order_id>', methods=['GET'])
-def get_order(order_id):
-    order = Order.query.get_or_404(order_id)
-    items = [
-        {
-            'product_id': item.product_id,
-            'quantity': item.quantity
-        } for item in order.items
-    ]
-    return jsonify({
-        'id': order.id,
-        'customer_id': order.customer_id,
-        'items': items
-    })
-
-@bp.route('/<int:order_id>', methods=['PUT'])
-def update_order(order_id):
-    from app.services.order_service import OrderService
-    data = request.get_json()
-    result, status = OrderService.update_order(order_id, data)
-    return jsonify(result), status
-from flask import Blueprint, request, jsonify, render_template
-from app import db
-from app.models import Order, OrderItem, Product, Customer
-from app.services.inventory_service import InventoryService
-import traceback 
+import traceback
 
 bp = Blueprint('orders', __name__)
 
@@ -52,39 +23,56 @@ def orders_view():
 
 # --- API ENDPOINTS ---
 
+@bp.route('/<int:order_id>', methods=['GET'])
+def get_order(order_id):
+    order = Order.query.get_or_404(order_id)
+    items = [
+        {
+            'product_id': item.product_id,
+            'quantity': item.quantity
+        } for item in order.order_items
+    ]
+    return jsonify({
+        'id': order.id,
+        'customer_id': order.customer_id,
+        'items': items
+    })
+
+@bp.route('/<int:order_id>', methods=['PUT'])
+def update_order(order_id):
+    from app.services.order_service import OrderService
+    data = request.get_json()
+    result, status = OrderService.update_order(order_id, data)
+    return jsonify(result), status
+
 @bp.route('', methods=['POST'])
 def create_order():
     data = request.get_json()
     customer_id = data.get('customer_id')
-    items_data = data.get('items') 
+    items_data = data.get('items')
 
     if not customer_id or not items_data:
         return jsonify({'error': 'Please select a customer and at least one product'}), 400
 
     try:
-        # 1. Start the Order
         new_order = Order(customer_id=customer_id, total_amount=0, status='pending')
         db.session.add(new_order)
-        db.session.flush() # Gets the ID without a full commit yet
+        db.session.flush()
 
         running_total = 0
-
         for item in items_data:
             p_id = item['product_id']
             qty = int(item['quantity'])
 
-            # 2. Check Availability
             product = db.session.get(Product, p_id)
             if not product or product.quantity < qty:
                 db.session.rollback()
                 return jsonify({'error': f'Not enough stock for {product.name if product else p_id}'}), 400
 
-            # 3. Deduct Stock & Calculate Price
             product.quantity -= qty
             item_total = float(product.price) * qty
             running_total += item_total
 
-            # 4. Create OrderItem
             order_item = OrderItem(
                 order_id=new_order.id,
                 product_id=p_id,
@@ -94,16 +82,14 @@ def create_order():
             )
             db.session.add(order_item)
 
-        # 5. Finalize
         new_order.total_amount = running_total
         new_order.status = 'completed'
         db.session.commit()
-
         return jsonify({'message': 'Order successful', 'order_id': new_order.id}), 201
 
     except Exception as e:
         db.session.rollback()
-        print(traceback.format_exc()) 
+        print(traceback.format_exc())
         return jsonify({'error': 'Server Error', 'details': str(e)}), 500
 
 @bp.route('/<int:order_id>', methods=['DELETE'])
