@@ -24,49 +24,10 @@ def get_order(order_id):
 
 @bp.route('/<int:order_id>', methods=['PUT'])
 def update_order(order_id):
-    order = Order.query.get_or_404(order_id)
+    from app.services.order_service import OrderService
     data = request.get_json()
-    customer_id = data.get('customer_id')
-    items_data = data.get('items')
-    if not customer_id or not items_data:
-        return jsonify({'error': 'Please select a customer and at least one product'}), 400
-    try:
-        # Restore product quantities for old items
-        for item in order.items:
-            product = Product.query.get(item.product_id)
-            if product:
-                product.quantity += item.quantity
-        # Remove old items
-        OrderItem.query.filter_by(order_id=order.id).delete()
-        db.session.flush()
-        # Update order
-        order.customer_id = customer_id
-        running_total = 0
-        for item in items_data:
-            p_id = item['product_id']
-            qty = int(item['quantity'])
-            product = Product.query.get(p_id)
-            if not product or product.quantity < qty:
-                db.session.rollback()
-                return jsonify({'error': f'Not enough stock for {product.name if product else p_id}'}), 400
-            product.quantity -= qty
-            item_total = float(product.price) * qty
-            running_total += item_total
-            order_item = OrderItem(
-                order_id=order.id,
-                product_id=p_id,
-                quantity=qty,
-                unit_price=product.price,
-                total_price=item_total
-            )
-            db.session.add(order_item)
-        order.total_amount = running_total
-        db.session.commit()
-        return jsonify({'message': 'Order updated'}), 200
-    except Exception as e:
-        db.session.rollback()
-        print(traceback.format_exc())
-        return jsonify({'error': 'Server Error', 'details': str(e)}), 500
+    result, status = OrderService.update_order(order_id, data)
+    return jsonify(result), status
 from flask import Blueprint, request, jsonify, render_template
 from app import db
 from app.models import Order, OrderItem, Product, Customer
